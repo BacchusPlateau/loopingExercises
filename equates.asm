@@ -53,6 +53,12 @@ cur_sum         = $A6    ; current running sum of current number
 cur_number      = $A7    ; current number we're computing square of
 high_number     = $A8    ; the highest number we are squaring
 sum_of_squares  = $A9    ; the sum of squares from 1 to n
+factorial       = $AA    ; the factorial of a number
+cur_sum_lo  = $AB
+cur_sum_hi  = $AC
+acc_lo      = $AD
+acc_hi      = $AE
+x_count     = $AF
 
 ; GR.8 color registers
 COLPF1  = $02C5     ; foreground pixel color shadow

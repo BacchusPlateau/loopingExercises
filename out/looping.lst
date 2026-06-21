@@ -57,56 +57,62 @@ Source: equates.asm
     53 = 00A7			cur_number      = $A7    ; current number we're computing square of
     54 = 00A8			high_number     = $A8    ; the highest number we are squaring
     55 = 00A9			sum_of_squares  = $A9    ; the sum of squares from 1 to n
-    56
-    57 				; GR.8 color registers
-    58 = 02C5			COLPF1  = $02C5     ; foreground pixel color shadow
-    59 = 02C6			COLPF2  = $02C6     ; background color shadow
-    60 = 02C8			COLBK   = $02C8     ; border color shadow
-    61
-    62 				; =====================================================================
-    63 				; CIO (Central I/O) constants
-    64 				; CIO is the Atari OS I/O system. We use it to open graphics mode.
-    65 				; Each I/O channel uses an IOCB (I/O Control Block) — a fixed block
-    66 				; of memory containing command, device, buffer address, and aux bytes.
-    67 				; We use IOCB6 (base address $0360) for graphics.
-    68 				; X register = $60 tells CIOV which IOCB to use (IOCB6).
-    69 				; =====================================================================
-    70 = E456			CIOV    = $E456     ; OS CIO entry point — call jsr CIOV to execute
-    71 = 0342			ICCOM   = $0342     ; IOCB6 command register
-    72 				                    ;   $03 = OPEN   (open a device)
-    73 				                    ;   $0C = CLOSE  (close a device)
-    74 = 0344			ICBAL   = $0344     ; IOCB6 buffer address low byte
-    75 				                    ;   for OPEN: points to device name string "S:"
-    76 = 0345			ICBAH   = $0345     ; IOCB6 buffer address high byte
-    77 				                    ;   together with ICBAL forms 16-bit pointer to "S:"
-    78 = 034A			ICAX1   = $034A     ; IOCB6 auxiliary byte 1
-    79 				                    ;   for OPEN: $0C = read/write access mode
-    80 = 034B			ICAX2   = $034B     ; IOCB6 auxiliary byte 2
-    81 				                    ;   for OPEN: graphics mode number (8 = GR.8)
-    82
-    83 				; =====================================================================
-    84 				; Screen RAM pointer
-    85 				; After CIO opens GR.8, the OS stores the address of screen RAM
-    86 				; in SAVMSC (two bytes). $58 = low byte, $59 = high byte.
-    87 				; On our 800XL PAL system screen RAM ends up at $B060.
-    88 				; =====================================================================
-    89 = 0058			SAVMSC  = $58       ; zero page address — low byte of screen RAM address
-    90 				                    ; $59 automatically contains the high byte
-    91
-    92 				; =====================================================================
-    93 				; Attract mode constants
-    94 				; The Atari OS has an attract mode that kicks in after inactivity
-    95 				; to prevent screen burn-in. It does this by desaturating all colors
-    96 				; making everything appear as shades of grey/blue.
-    97 				; We must continuously reset these in our main loop to keep colors!
+    56 = 00AA			factorial       = $AA    ; the factorial of a number
+    57 = 00AB			cur_sum_lo  = $AB
+    58 = 00AC			cur_sum_hi  = $AC
+    59 = 00AD			acc_lo      = $AD
+    60 = 00AE			acc_hi      = $AE
+    61 = 00AF			x_count     = $AF
+    62
+    63 				; GR.8 color registers
+    64 = 02C5			COLPF1  = $02C5     ; foreground pixel color shadow
+    65 = 02C6			COLPF2  = $02C6     ; background color shadow
+    66 = 02C8			COLBK   = $02C8     ; border color shadow
+    67
+    68 				; =====================================================================
+    69 				; CIO (Central I/O) constants
+    70 				; CIO is the Atari OS I/O system. We use it to open graphics mode.
+    71 				; Each I/O channel uses an IOCB (I/O Control Block) — a fixed block
+    72 				; of memory containing command, device, buffer address, and aux bytes.
+    73 				; We use IOCB6 (base address $0360) for graphics.
+    74 				; X register = $60 tells CIOV which IOCB to use (IOCB6).
+    75 				; =====================================================================
+    76 = E456			CIOV    = $E456     ; OS CIO entry point — call jsr CIOV to execute
+    77 = 0342			ICCOM   = $0342     ; IOCB6 command register
+    78 				                    ;   $03 = OPEN   (open a device)
+    79 				                    ;   $0C = CLOSE  (close a device)
+    80 = 0344			ICBAL   = $0344     ; IOCB6 buffer address low byte
+    81 				                    ;   for OPEN: points to device name string "S:"
+    82 = 0345			ICBAH   = $0345     ; IOCB6 buffer address high byte
+    83 				                    ;   together with ICBAL forms 16-bit pointer to "S:"
+    84 = 034A			ICAX1   = $034A     ; IOCB6 auxiliary byte 1
+    85 				                    ;   for OPEN: $0C = read/write access mode
+    86 = 034B			ICAX2   = $034B     ; IOCB6 auxiliary byte 2
+    87 				                    ;   for OPEN: graphics mode number (8 = GR.8)
+    88
+    89 				; =====================================================================
+    90 				; Screen RAM pointer
+    91 				; After CIO opens GR.8, the OS stores the address of screen RAM
+    92 				; in SAVMSC (two bytes). $58 = low byte, $59 = high byte.
+    93 				; On our 800XL PAL system screen RAM ends up at $B060.
+    94 				; =====================================================================
+    95 = 0058			SAVMSC  = $58       ; zero page address — low byte of screen RAM address
+    96 				                    ; $59 automatically contains the high byte
+    97
     98 				; =====================================================================
-    99 = 004D			ATRACT  = $4D       ; attract mode counter — OS increments this each frame
-   100 				                    ; when it reaches a threshold attract mode activates
-   101 				                    ; we keep writing 0 to prevent it from activating
-   102 = 004E			ATRMSK  = $4E       ; attract mode color mask
-   103 				                    ; OS ANDs all colors with this value
-   104 				                    ; $FE strips hue leaving only luminance (grey/blue)
-   105 				                    ; $FF = full color (no masking) — what we want
+    99 				; Attract mode constants
+   100 				; The Atari OS has an attract mode that kicks in after inactivity
+   101 				; to prevent screen burn-in. It does this by desaturating all colors
+   102 				; making everything appear as shades of grey/blue.
+   103 				; We must continuously reset these in our main loop to keep colors!
+   104 				; =====================================================================
+   105 = 004D			ATRACT  = $4D       ; attract mode counter — OS increments this each frame
+   106 				                    ; when it reaches a threshold attract mode activates
+   107 				                    ; we keep writing 0 to prevent it from activating
+   108 = 004E			ATRMSK  = $4E       ; attract mode color mask
+   109 				                    ; OS ANDs all colors with this value
+   110 				                    ; $FE strips hue leaving only luminance (grey/blue)
+   111 				                    ; $FF = full color (no masking) — what we want
      2 				        icl 'routines.asm'
 Source: routines.asm
      1 				; routines.asm
@@ -1023,7 +1029,7 @@ Source: routines.asm
      5
      6 2000			        .proc main
      7 				    
-     8 2000-204A> A9 01 8D F0 +         mva #1 csrhinh
+     8 2000-209D> A9 01 8D F0 +         mva #1 csrhinh
      9 2005 A9 01 85 54		        mva #1 rowcrs
     10 2009 A9 01 85 55		        mva #1 colcrs
     11
@@ -1034,85 +1040,139 @@ Source: routines.asm
     16 				        ;important zero page variables:
     17 				        ;cur_sum         = $A6    ; current running sum of current number
     18 				        ;cur_number      = $A7    ; current number we're computing square of
-    19 				        ;high_number     = $A8    ; the highest number we are squaring
-    20 				        ;sum_of_squares  = $A9    ; the sum of squares from 1 to n
-    21
-    22 200D A9 04 85 A8		        mva #4 high_number              ; high_number = 4
-    23 2011 A5 A8 85 A7		        mva high_number cur_number      ; cur_number = high_number
-    24 2015 A9 00 85 A9		        mva #0 sum_of_squares
-    25 2019 A9 00		        lda #0                          ; a = 0
-    26 201B A6 A7		        ldx cur_number                  ; x = cur_number
-    27
-    28 201D			sum_of_squares_inner:
-    29 201D 18			        clc                             ; clear carry
-    30 201E 65 A7		        adc cur_number                  ; a += cur_number
-    31 2020 CA			        dex                             ; x--
-    32 2021 E0 00		        cpx #0                          ; x == 0?
-    33 2023 D0 F8		        bne sum_of_squares_inner        ; branch if we are > 0
-    34
-    35 2025 85 A6		        sta cur_sum                     ; cur_sum = a
-    36 2027 A5 A9		        lda sum_of_squares              ; a = sum_of_squares
-    37 2029 18			        clc                             ; clear carry
-    38 202A 65 A6		        adc cur_sum                     ; a += cur_sum 
-    39 202C 85 A9		        sta sum_of_squares              ; sum_of_squares = a
-    40
-    41 202E C6 A7		        dec cur_number                  ; cur_number--
-    42 2030 A5 A7		        lda cur_number                  ; a = cur_number
-    43
-    44 2032 C9 01		        cmp #1                          ; a == 1?
-    45 2034 F0 07		        beq done_sum                    ; if a==1, break out
-    46
-    47 2036 A9 00		        lda #0                          ; a = 0
-    48 2038 A6 A7		        ldx cur_number                  ; x = cur_number
-    49 				        
-    50 203A 4C 1D 20		        jmp sum_of_squares_inner        ; back to the top
-    51 203D			done_sum:        
-    52 203D A5 A9		        lda sum_of_squares              ; a = sum_of_squares
-    53 203F 18			        clc                             ; clear carry
-    54 2040 69 01		        adc #1                          ; a += 1 (this is the 1^1)
-    55 2042 20 5A 33		        jsr printDecimal        
-    56
-    57
-    58 				        ;Exercise 2 — Factorial
-    59 				        ;Calculate 5! = 5 × 4 × 3 × 2 × 1 = 120 and print it. 
-    60 				        ;This needs nested loops — an outer loop for the multiplication count, and an 
-    61 				        ;inner loop for the repeated addition that simulates each multiply.
-    62
-    63 				        ;Exercise 3 — Fibonacci sequence
-    64 				        ;Print the first 8 Fibonacci numbers with spaces between them:
-    65 				        ;1 1 2 3 5 8 13 21
-    66 				        ;You'll need two variables tracking "previous" and "current" values.
-    67
-    68 				        ;Exercise 4 — Digit sum
-    69 				        ;Given the number 47, calculate the sum of its digits (4 + 7 = 11) and print the result. 
-    70 				        ;Hint: use your printDecimal-style subtraction trick to extract digits, but instead of printing them, add them together!
-    71
-    72 				        ;Exercise 5 — GCD (Greatest Common Divisor)
-    73 				        ;Calculate the GCD of 48 and 18 using the Euclidean algorithm:
-    74 				        ;while b != 0:
-    75 				        ;    temp = b
-    76 				        ;    b = a mod b
-    77 				        ;    a = temp
-    78 				        ;result = a
-    79 				        ;This is the hardest one — you'll need a modulo operation which means repeated subtraction in a loop!
-    80 				      
-    81 				        
-    82
-    83
-    84 				;===================================================================
-    85
-    86 2045			halt:
-    87 2045 20 69 31		        jsr fightAttract
-    88 2048 4C 45 20		        jmp halt
+    19 				        ;sum_of_squares  = $A9    ; the sum of squares from 1 to n
+    20
+    21 200D A9 04 85 A7		        mva #4 cur_number               ; cur_number = high_number
+    22 2011 A9 00 85 A9		        mva #0 sum_of_squares           ; sum_of_squares = 0
+    23 2015 A9 00		        lda #0                          ; a = 0
+    24 2017 A6 A7		        ldx cur_number                  ; x = cur_number
+    25
+    26 2019			sum_of_squares_inner:
+    27 2019 18			        clc                             ; clear carry
+    28 201A 65 A7		        adc cur_number                  ; a += cur_number
+    29 201C CA			        dex                             ; x--
+    30 201D E0 00		        cpx #0                          ; x == 0?
+    31 201F D0 F8		        bne sum_of_squares_inner        ; branch if we are > 0
+    32
+    33 2021 85 A6		        sta cur_sum                     ; cur_sum = a
+    34 2023 A5 A9		        lda sum_of_squares              ; a = sum_of_squares
+    35 2025 18			        clc                             ; clear carry
+    36 2026 65 A6		        adc cur_sum                     ; a += cur_sum 
+    37 2028 85 A9		        sta sum_of_squares              ; sum_of_squares = a
+    38
+    39 202A C6 A7		        dec cur_number                  ; cur_number--
+    40 202C A5 A7		        lda cur_number                  ; a = cur_number
+    41
+    42 202E C9 00		        cmp #0                          ; a == 0?
+    43 2030 F0 07		        beq done_sum                    ; if a==0, break out
+    44
+    45 2032 A9 00		        lda #0                          ; a = 0
+    46 2034 A6 A7		        ldx cur_number                  ; x = cur_number
+    47 				        
+    48 2036 4C 19 20		        jmp sum_of_squares_inner        ; back to the top
+    49 2039			done_sum:        
+    50 2039 A5 A9		        lda sum_of_squares              ; a = sum_of_squares
+    51 203B 20 5A 33		        jsr printDecimal        
+    52
+    53
+    54 				        ;Exercise 2 — Factorial
+    55 				        ;Calculate 5! = 5 × 4 × 3 × 2 × 1 = 120 and print it. 
+    56 				        ;This needs nested loops — an outer loop for the multiplication count, and an 
+    57 				        ;inner loop for the repeated addition that simulates each multiply.
+    58
+    59 				        ;additional zero page variable
+    60 				        ;factorial       = $AA    ; the factorial of a number
+    61
+    62 203E A9 03 85 54		        mva #3 rowcrs                   ; set the cursor on row 3
+    63 2042 A9 01 85 55		        mva #1 colcrs                   ; set the cursor on column 1
+    64
+    65 2046 A9 07 85 A7		        mva #7 cur_number               ; cur_number = starting number (try 6 or 7)
+    66 204A A5 A7 85 AB		        mva cur_number cur_sum_lo       ; cur_sum_lo = cur_number
+    67 204E A9 00 85 AC		        mva #0 cur_sum_hi               ; cur_sum_hi = 0 (cur_sum starts as a small number, fits in 8 bits)
+    68
+    69 2052 A5 A7		        lda cur_number
+    70 2054 38			        sec
+    71 2055 E9 01		        sbc #1
+    72 2057 85 AF		        sta x_count                     ; x_count = cur_number - 1 (how many times to add)
+    73
+    74 2059			fact_loop:
+    75 				        ; A_lo/A_hi = 0  (running total for this multiplication pass)
+    76 2059 A9 00 85 AD		        mva #0 acc_lo
+    77 205D A9 00 85 AE		        mva #0 acc_hi
+    78 2061 A6 AF		        ldx x_count
+    79
+    80 2063			fact_inner:
+    81 				        ; acc += cur_sum  (16-bit addition)
+    82 2063 A5 AD		        lda acc_lo
+    83 2065 18			        clc
+    84 2066 65 AB		        adc cur_sum_lo
+    85 2068 85 AD		        sta acc_lo
+    86 206A A5 AE		        lda acc_hi
+    87 206C 65 AC		        adc cur_sum_hi
+    88 206E 85 AE		        sta acc_hi
     89
-    90 				        .endp
-    91
-    92 				;===================================================================
-    93 				; Data section
-    94 				;===================================================================
-    95 				        ;.local string1
-    96 				        ;.byte 'HELLO FROM STRING ONE!',0
-    97 				        ;.endl
+    90 2070 CA			        dex
+    91 2071 D0 F0		        bne fact_inner
+    92
+    93 				        ; cur_sum = acc
+    94 2073 A5 AD		        lda acc_lo
+    95 2075 85 AB		        sta cur_sum_lo
+    96 2077 A5 AE		        lda acc_hi
+    97 2079 85 AC		        sta cur_sum_hi
     98
-    99
-   100 02E0-02E1> 00 20		        run main
+    99 207B C6 A7		        dec cur_number
+   100 207D A5 A7		        lda cur_number
+   101 207F C9 01		        cmp #1
+   102 2081 F0 0A		        beq done_fact
+   103
+   104 				        ; x_count = cur_number - 1
+   105 2083 A5 A7		        lda cur_number
+   106 2085 38			        sec
+   107 2086 E9 01		        sbc #1
+   108 2088 85 AF		        sta x_count
+   109
+   110 208A 4C 59 20		        jmp fact_loop
+   111 208D			done_fact:
+   112
+   113 208D A5 AB 85 A3		        mva cur_sum_lo p16_val_lo
+   114 2091 A5 AC 85 A4		        mva cur_sum_hi p16_val_hi
+   115 2095 20 A1 32		        jsr printBigDecimal
+   116
+   117 				        ;Exercise 3 — Fibonacci sequence
+   118 				        ;Print the first 8 Fibonacci numbers with spaces between them:
+   119 				        ;1 1 2 3 5 8 13 21
+   120 				        ;You'll need two variables tracking "previous" and "current" values.
+   121
+   122 				        ;Exercise 4 — Digit sum
+   123 				        ;Given the number 47, calculate the sum of its digits (4 + 7 = 11) and print the result. 
+   124 				        ;Hint: use your printDecimal-style subtraction trick to extract digits, but instead of printing them, add them together!
+   125
+   126 				        ;Exercise 5 — GCD (Greatest Common Divisor)
+   127 				        ;Calculate the GCD of 48 and 18 using the Euclidean algorithm:
+   128 				        ;while b != 0:
+   129 				        ;    temp = b
+   130 				        ;    b = a mod b
+   131 				        ;    a = temp
+   132 				        ;result = a
+   133 				        ;This is the hardest one — you'll need a modulo operation which means repeated subtraction in a loop!
+   134 				      
+   135 				        
+   136
+   137
+   138 				;===================================================================
+   139
+   140 2098			halt:
+   141 2098 20 69 31		        jsr fightAttract
+   142 209B 4C 98 20		        jmp halt
+   143
+   144 				        .endp
+   145
+   146 				;===================================================================
+   147 				; Data section
+   148 				;===================================================================
+   149 				        ;.local string1
+   150 				        ;.byte 'HELLO FROM STRING ONE!',0
+   151 				        ;.endl
+   152
+   153
+   154 02E0-02E1> 00 20		        run main
