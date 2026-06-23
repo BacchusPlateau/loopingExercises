@@ -62,7 +62,7 @@ done_sum:
         mva #3 rowcrs                   ; set the cursor on row 3
         mva #1 colcrs                   ; set the cursor on column 1
 
-        mva #7 cur_number               ; cur_number = starting number (try 6 or 7)
+        mva #6 cur_number               ; cur_number = starting number (try 6 or 7)
         mva cur_number cur_sum_lo       ; cur_sum_lo = cur_number
         mva #0 cur_sum_hi               ; cur_sum_hi = 0 (cur_sum starts as a small number, fits in 8 bits)
 
@@ -114,26 +114,110 @@ done_fact:
         mva cur_sum_hi p16_val_hi
         jsr printBigDecimal
 
-        ;Exercise 3 — Fibonacci sequence
-        ;Print the first 8 Fibonacci numbers with spaces between them:
-        ;1 1 2 3 5 8 13 21
-        ;You'll need two variables tracking "previous" and "current" values.
 
-        ;Exercise 4 — Digit sum
-        ;Given the number 47, calculate the sum of its digits (4 + 7 = 11) and print the result. 
-        ;Hint: use your printDecimal-style subtraction trick to extract digits, but instead of printing them, add them together!
-
-        ;Exercise 5 — GCD (Greatest Common Divisor)
-        ;Calculate the GCD of 48 and 18 using the Euclidean algorithm:
-        ;while b != 0:
-        ;    temp = b
-        ;    b = a mod b
-        ;    a = temp
-        ;result = a
-        ;This is the hardest one — you'll need a modulo operation which means repeated subtraction in a loop!
-      
+        ; Exercise 3 - adding numbers
+        ; Add numbers 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 together one at a time 
+        ; in a single loop, but stop early the moment the running total exceeds 20.
+        ; Print the final total and print how many numbers you actually added.
+        ; (Just a single loop, one adc, one comparison to decide when to stop early.)
         
+        mva #5 rowcrs                   ; set the cursor on row 3
+        mva #1 colcrs                   ; set the cursor on column 1
 
+        ldx #0                          ; x=0
+        ldy #0                          ; y=0 (holds how many numbers we added)
+        lda #0                          ; a=0
+        mva #0 p16_val_lo               ; p16_val_lo=0
+addTo20:
+        inx                             ; x++
+        iny                             ; y++
+        stx p16_val_lo                  ; p16_val_lo = x
+        clc                             ; clear carry
+        adc p16_val_lo                  ; a += p16_val_lo
+        cmp #20                         ; a > 20?
+        bcc addTo20                     ; branch if carry is clear, so this will branch until
+                                        ; a is greather than 20 which will set the carry
+        sty p16_val_hi                  ; save Y to p16_val_hi
+
+        jsr printDecimal                ; print sum, should be 21        
+
+        mva #6 rowcrs
+        mva #1 colcrs
+
+        lda p16_val_hi                  ; put the total numbers we added into a
+        jsr printDecimal                ; print that total, should be 6
+
+        ; Exercise 4 - Count occurrences
+        ; Loop from 1 to 30. Count how many of those numbers are divisible by 3 
+        ; (you already know how to test divisibility by 2 with and — divisibility 
+        ; by 3 needs a different approach: subtract 3 repeatedly until you can't anymore, 
+        ; and check if you land exactly on 0). Print the count at the end.
+
+        mva #8 rowcrs                   ; set the cursor on row 3
+        mva #1 colcrs                   ; set the cursor on column 1
+
+        ldx #0                          ; loop counter
+        ldy #0                          ; numbers divisible by 3
+
+countOccurrenceOuter:
+        inx                             ; x++
+        cpx #31                         ; is x == 31?
+        beq doneCountOccurrances        ; jump out
+
+        txa                             ; a=x
+
+ countOccurrenceInner:
+        sec                             ; set carry
+        sbc #3                          ; a-=3
+        beq divBy3                      ; branch if the zero flag is set
+        bcc countOccurrenceOuter        ; we've gone negative, the carry is cleared, branch to top "branch if borrowed"
+        ; assume a>0
+        jmp countOccurrenceInner        ; keep subtracting
+
+divBy3:
+        iny                             ; y++
+        jmp countOccurrenceOuter        ; back to top
+
+doneCountOccurrances:
+        tya                             ; a=y
+        jsr printDecimal                ; print total, should be 10
+
+
+        ; Exercise 5 - Min and max
+        ; You have a hardcoded list of 5 numbers in a .byte table: 12, 45, 3, 78, 22. 
+        ; Loop through the table using indexed addressing (lda table,x) and find the largest value. Print it.
+
+        ; load first entry into a "best so far" variable
+        ; loop x from 1 to 4:
+        ;    load numbers[x]
+        ;    compare to "best so far"
+        ;    if bigger, replace "best so far"
+        ; print "best so far"
+
+        mva #10 rowcrs                  ; set the cursor on row 10
+        mva #1 colcrs                   ; set the cursor on column 1
+
+        ldx #0                          ; x = 0
+        mva #0 p16_val_lo              ; p16_val_lo = 0, holds the biggest
+
+findBiggest:
+        lda numbers,x                   ; a = numbers[x]
+        inx                             ; x++
+
+        cpx #.len numbers               ; is x == len(numbers)?
+        beq doneBiggest
+
+        cmp p16_val_lo                  ; compare A with p16_val_lo
+        bcs replaceValue                ; if p16_val_lo > a, branch
+        jmp findBiggest
+
+replaceValue:
+        sta p16_val_lo                  ; p16_val_lo = a
+        jmp findBiggest
+
+doneBiggest:
+        lda p16_val_lo
+        jsr printDecimal                ; print result, should be 78
 
 ;===================================================================
 
@@ -146,9 +230,9 @@ halt:
 ;===================================================================
 ; Data section
 ;===================================================================
-        ;.local string1
-        ;.byte 'HELLO FROM STRING ONE!',0
-        ;.endl
+        .local numbers
+        .byte 78, 45, 3, 12, 22
+        .endl
 
 
         run main

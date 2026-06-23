@@ -1029,7 +1029,7 @@ Source: routines.asm
      5
      6 2000			        .proc main
      7 				    
-     8 2000-209D> A9 01 8D F0 +         mva #1 csrhinh
+     8 2000-211C> A9 01 8D F0 +         mva #1 csrhinh
      9 2005 A9 01 85 54		        mva #1 rowcrs
     10 2009 A9 01 85 55		        mva #1 colcrs
     11
@@ -1086,7 +1086,7 @@ Source: routines.asm
     62 203E A9 03 85 54		        mva #3 rowcrs                   ; set the cursor on row 3
     63 2042 A9 01 85 55		        mva #1 colcrs                   ; set the cursor on column 1
     64
-    65 2046 A9 07 85 A7		        mva #7 cur_number               ; cur_number = starting number (try 6 or 7)
+    65 2046 A9 06 85 A7		        mva #6 cur_number               ; cur_number = starting number (try 6 or 7)
     66 204A A5 A7 85 AB		        mva cur_number cur_sum_lo       ; cur_sum_lo = cur_number
     67 204E A9 00 85 AC		        mva #0 cur_sum_hi               ; cur_sum_hi = 0 (cur_sum starts as a small number, fits in 8 bits)
     68
@@ -1138,41 +1138,125 @@ Source: routines.asm
    114 2091 A5 AC 85 A4		        mva cur_sum_hi p16_val_hi
    115 2095 20 A1 32		        jsr printBigDecimal
    116
-   117 				        ;Exercise 3 — Fibonacci sequence
-   118 				        ;Print the first 8 Fibonacci numbers with spaces between them:
-   119 				        ;1 1 2 3 5 8 13 21
-   120 				        ;You'll need two variables tracking "previous" and "current" values.
-   121
-   122 				        ;Exercise 4 — Digit sum
-   123 				        ;Given the number 47, calculate the sum of its digits (4 + 7 = 11) and print the result. 
-   124 				        ;Hint: use your printDecimal-style subtraction trick to extract digits, but instead of printing them, add them together!
-   125
-   126 				        ;Exercise 5 — GCD (Greatest Common Divisor)
-   127 				        ;Calculate the GCD of 48 and 18 using the Euclidean algorithm:
-   128 				        ;while b != 0:
-   129 				        ;    temp = b
-   130 				        ;    b = a mod b
-   131 				        ;    a = temp
-   132 				        ;result = a
-   133 				        ;This is the hardest one — you'll need a modulo operation which means repeated subtraction in a loop!
-   134 				      
-   135 				        
-   136
-   137
-   138 				;===================================================================
-   139
-   140 2098			halt:
-   141 2098 20 69 31		        jsr fightAttract
-   142 209B 4C 98 20		        jmp halt
+   117
+   118 				        ; Exercise 3 - adding numbers
+   119 				        ; Add numbers 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 together one at a time 
+   120 				        ; in a single loop, but stop early the moment the running total exceeds 20.
+   121 				        ; Print the final total and print how many numbers you actually added.
+   122 				        ; (Just a single loop, one adc, one comparison to decide when to stop early.)
+   123 				        
+   124 2098 A9 05 85 54		        mva #5 rowcrs                   ; set the cursor on row 3
+   125 209C A9 01 85 55		        mva #1 colcrs                   ; set the cursor on column 1
+   126
+   127 20A0 A2 00		        ldx #0                          ; x=0
+   128 20A2 A0 00		        ldy #0                          ; y=0 (holds how many numbers we added)
+   129 20A4 A9 00		        lda #0                          ; a=0
+   130 20A6 A9 00 85 A3		        mva #0 p16_val_lo               ; p16_val_lo=0
+   131 20AA			addTo20:
+   132 20AA E8			        inx                             ; x++
+   133 20AB C8			        iny                             ; y++
+   134 20AC 86 A3		        stx p16_val_lo                  ; p16_val_lo = x
+   135 20AE 18			        clc                             ; clear carry
+   136 20AF 65 A3		        adc p16_val_lo                  ; a += p16_val_lo
+   137 20B1 C9 14		        cmp #20                         ; a > 20?
+   138 20B3 90 F5		        bcc addTo20                     ; branch if carry is clear, so this will branch until
+   139 				                                        ; a is greather than 20 which will set the carry
+   140 20B5 84 A4		        sty p16_val_hi                  ; save Y to p16_val_hi
+   141
+   142 20B7 20 5A 33		        jsr printDecimal                ; print sum, should be 21        
    143
-   144 				        .endp
-   145
-   146 				;===================================================================
-   147 				; Data section
-   148 				;===================================================================
-   149 				        ;.local string1
-   150 				        ;.byte 'HELLO FROM STRING ONE!',0
-   151 				        ;.endl
-   152
-   153
-   154 02E0-02E1> 00 20		        run main
+   144 20BA A9 06 85 54		        mva #6 rowcrs
+   145 20BE A9 01 85 55		        mva #1 colcrs
+   146
+   147 20C2 A5 A4		        lda p16_val_hi                  ; put the total numbers we added into a
+   148 20C4 20 5A 33		        jsr printDecimal                ; print that total, should be 6
+   149
+   150 				        ; Exercise 4 - Count occurrences
+   151 				        ; Loop from 1 to 30. Count how many of those numbers are divisible by 3 
+   152 				        ; (you already know how to test divisibility by 2 with and — divisibility 
+   153 				        ; by 3 needs a different approach: subtract 3 repeatedly until you can't anymore, 
+   154 				        ; and check if you land exactly on 0). Print the count at the end.
+   155
+   156 20C7 A9 08 85 54		        mva #8 rowcrs                   ; set the cursor on row 3
+   157 20CB A9 01 85 55		        mva #1 colcrs                   ; set the cursor on column 1
+   158
+   159 20CF A2 00		        ldx #0                          ; loop counter
+   160 20D1 A0 00		        ldy #0                          ; numbers divisible by 3
+   161
+   162 20D3			countOccurrenceOuter:
+   163 20D3 E8			        inx                             ; x++
+   164 20D4 E0 1F		        cpx #31                         ; is x == 31?
+   165 20D6 F0 0F		        beq doneCountOccurrances        ; jump out
+   166
+   167 20D8 8A			        txa                             ; a=x
+   168
+   169 20D9			 countOccurrenceInner:
+   170 20D9 38			        sec                             ; set carry
+   171 20DA E9 03		        sbc #3                          ; a-=3
+   172 20DC F0 05		        beq divBy3                      ; branch if the zero flag is set
+   173 20DE 90 F3		        bcc countOccurrenceOuter        ; we've gone negative, the carry is cleared, branch to top "branch if borrowed"
+   174 				        ; assume a>0
+   175 20E0 4C D9 20		        jmp countOccurrenceInner        ; keep subtracting
+   176
+   177 20E3			divBy3:
+   178 20E3 C8			        iny                             ; y++
+   179 20E4 4C D3 20		        jmp countOccurrenceOuter        ; back to top
+   180
+   181 20E7			doneCountOccurrances:
+   182 20E7 98			        tya                             ; a=y
+   183 20E8 20 5A 33		        jsr printDecimal                ; print total, should be 10
+   184
+   185
+   186 				        ; Exercise 5 - Min and max
+   187 				        ; You have a hardcoded list of 5 numbers in a .byte table: 12, 45, 3, 78, 22. 
+   188 				        ; Loop through the table using indexed addressing (lda table,x) and find the largest value. Print it.
+   189
+   190 				        ; load first entry into a "best so far" variable
+   191 				        ; loop x from 1 to 4:
+   192 				        ;    load numbers[x]
+   193 				        ;    compare to "best so far"
+   194 				        ;    if bigger, replace "best so far"
+   195 				        ; print "best so far"
+   196
+   197 20EB A9 0A 85 54		        mva #10 rowcrs                  ; set the cursor on row 10
+   198 20EF A9 01 85 55		        mva #1 colcrs                   ; set the cursor on column 1
+   199
+   200 20F3 A2 00		        ldx #0                          ; x = 0
+   201 20F5 A9 00 85 A3		        mva #0 p16_val_lo              ; p16_val_lo = 0, holds the biggest
+   202
+   203 20F9			findBiggest:
+   204 20F9 BD 18 21		        lda numbers,x                   ; a = numbers[x]
+   205 20FC E8			        inx                             ; x++
+   206
+   207 20FD E0 05		        cpx #.len numbers               ; is x == len(numbers)?
+   208 20FF F0 0C		        beq doneBiggest
+   209
+   210 2101 C5 A3		        cmp p16_val_lo                  ; compare A with p16_val_lo
+   211 2103 B0 03		        bcs replaceValue                ; if p16_val_lo > a, branch
+   212 2105 4C F9 20		        jmp findBiggest
+   213
+   214 2108			replaceValue:
+   215 2108 85 A3		        sta p16_val_lo                  ; p16_val_lo = a
+   216 210A 4C F9 20		        jmp findBiggest
+   217
+   218 210D			doneBiggest:
+   219 210D A5 A3		        lda p16_val_lo
+   220 210F 20 5A 33		        jsr printDecimal                ; print result, should be 78
+   221
+   222 				;===================================================================
+   223
+   224 2112			halt:
+   225 2112 20 69 31		        jsr fightAttract
+   226 2115 4C 12 21		        jmp halt
+   227
+   228 				        .endp
+   229
+   230 				;===================================================================
+   231 				; Data section
+   232 				;===================================================================
+   233 2118			        .local numbers
+   234 2118 4E 2D 03 0C 16	        .byte 78, 45, 3, 12, 22
+   235 				        .endl
+   236
+   237
+   238 02E0-02E1> 00 20		        run main
